@@ -5,14 +5,15 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email.mime.image import MIMEImage
-from quart import Quart, request, jsonify
+from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
 load_dotenv()
-app = Quart(__name__)
+app = Flask(__name__)
 
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_PASS = os.getenv("GMAIL_PASS")
+
 
 def envoyer_mail_sync(subject: str, body: str, files=None):
     """Envoi d'email via Gmail avec pièces jointes"""
@@ -69,12 +70,13 @@ def envoyer_mail_sync(subject: str, body: str, files=None):
         print(f"❌ Erreur lors de l'envoi de l'email: {e}")
         raise e
 
+
 # ------------------------
-# ROUTES QUART
+# ROUTES FLASK
 # ------------------------
 
 @app.route("/test-email", methods=["POST"])
-async def test_email():
+def test_email():
     """Route pour tester l'envoi d'email"""
     try:
         envoyer_mail_sync("Test Selennia API", "Ceci est un test d'envoi d'email depuis l'API Selennia.")
@@ -84,9 +86,9 @@ async def test_email():
 
 
 @app.route("/contact", methods=["POST"])
-async def contact():
+def contact():
     try:
-        data = await request.form
+        data = request.form
         nom = data.get("name")
         email = data.get("email")
         sujet = data.get("subject", "Message depuis le site")
@@ -118,10 +120,10 @@ Envoyé depuis le formulaire de contact du site Selennia Boutique
 
 
 @app.route("/estimation", methods=["POST"])
-async def estimation():
+def estimation():
     try:
-        data = await request.form
-        files = await request.files
+        data = request.form
+        files = request.files
 
         nom = data.get("name")
         email = data.get("email")
@@ -163,17 +165,8 @@ Envoyé depuis le formulaire d'estimation du site Selennia Boutique
         return jsonify({"error": "Erreur lors de l'envoi de la demande"}), 500
 
 
-@app.route("/test", methods=["GET"])
-async def test():
-    return jsonify({
-        "status": "API Selennia Boutique fonctionnelle",
-        "gmail_user": GMAIL_USER,
-        "gmail_configured": bool(GMAIL_USER and GMAIL_PASS)
-    }), 200
-
-
 @app.after_request
-async def after_request(response):
+def after_request(response):
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
     response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
@@ -181,14 +174,4 @@ async def after_request(response):
 
 
 if __name__ == "__main__":
-    if not GMAIL_USER or not GMAIL_PASS:
-        print("❌ Erreur: GMAIL_USER et GMAIL_PASS doivent être définis dans le fichier .env")
-        print("📋 Instructions:")
-        print("   1. Activez l'authentification à 2 facteurs sur Gmail")
-        print("   2. Générez un mot de passe d'application")
-        print("   3. Ajoutez GMAIL_USER et GMAIL_PASS dans votre fichier .env")
-        exit(1)
-
-    print(f"🚀 API Selennia démarrée avec l'email: {GMAIL_USER}")
-    print(f"🧪 Testez l'envoi d'email: POST /test-email")
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
