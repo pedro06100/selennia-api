@@ -7,9 +7,11 @@ from email.mime.application import MIMEApplication
 from email.mime.image import MIMEImage
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
+from flask_cors import CORS
 
 load_dotenv()
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_PASS = os.getenv("GMAIL_PASS")
